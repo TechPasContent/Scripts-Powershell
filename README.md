@@ -7,10 +7,18 @@
 
 # Description
 
-- playstation1.ps1 : 
+- <b> playstation1.ps1 </b> 
 	- Change le nom du PC 
-	- Redémarrage
+	- Redémarrage nécessaire
 
-- playstation2.ps2 <b> OUI </b>
+- <b> playstation2.ps1 </b>
 	- Config de l'interface (IP, DNS, Gateway...)
+	- Installation du serveur DHCP
+	- Installation du serveur AD et de la Forêt
+	- Redémarrage nécessaire
+
+- <b> playstation3.ps1 </b>
+	- Autorise DHCP sur le DC
+	- Config users/grps/OU de l'AD
+	- Configuration du dossier pour les profils itinérants
 	- 
