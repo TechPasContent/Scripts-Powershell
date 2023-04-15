@@ -24,7 +24,7 @@ $UserInput = $InterfaceAlias
 if ($CurrentInterfaces.Name.Contains($InterfaceAlias)) {
     Write-Host "The interface '$InterfaceAlias' has been successfully found." -ForegroundColor Green
 } else {
-    while (-not $CurrentInterfaces.Name.Contains($UserInput) -or $UserInput -eq "") {
+    while (-not ($CurrentInterfaces.Name.Contains($UserInput) -and $UserInput -ne "")) {
         Write-Host "Interface Alias parameter is not set correctly. No interface on this machine named '$UserInput'." -ForegroundColor Red
         Write-Host "Following interfaces are available : "
         foreach ($i in $CurrentInterfaces.Name) {
