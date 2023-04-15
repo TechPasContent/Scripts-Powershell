@@ -1,8 +1,10 @@
+Configuration du DC1 : Interface, DHCP, AD, USers, OU, dossier Commun, ...
+
 # Utilisation 
 Prérequis : 1VM, un disque secondaire sur la VM
 1. Lancer playstation1.ps1, redémarrer
 2. Lancer playstation2.ps1, redémarrer
-3. lancer playstation3.ps1, redémarrer
+3. lancer playstation3.ps1
 
 
 

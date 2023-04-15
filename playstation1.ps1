@@ -9,4 +9,5 @@ if ( $CurrentHostname -ne $NewHostname) {
 }
 else {
     Write-Host "Hostname of this computer is already $NewHostname"
+    pause
 }
