@@ -1,4 +1,10 @@
+
 $domainName = (Get-Content .\general.conf)[10].Split()[2]
+$Letter =(Get-Content .\general.conf)[13].Split()[2]
+$domainName = (Get-Content .\general.conf)[10].Split()[2]
+$DataFolderName = (Get-Content .\general.conf)[14].Split()[2]
+$ProfilesFolderName = (Get-Content .\general.conf)[15].Split()[2]
+$NewVolumeName = "Data"
 
 ################################### AUTHORIZE DHCP SERVER #############################################
 #######################################################################################################
@@ -17,13 +23,13 @@ Write-Host "############## DHCP AUTHORISATION END ##############"
 Write-Host
 Write-Host "############## AD CONFIGURATION START ##############"
 
+$DC1 = $domainName.Split(".")[1]
+$DC2 = $domainName.Split(".")[0]
 $ErrorActionPreference = 'SilentlyContinue'
-
-# Protected from accidental deletion for OU
 $bProtectedFromAccidentalDeletion = $false
 
 # OU configuration
-$rootPath = "DC=isec, DC=local"
+$rootPath = "DC=$DC2, DC=$DC1"
 $OUUtilisateurs = "OU=Utilisateurs, $rootPath"
 $OUDirection = "OU=Direction, $OUUtilisateurs"
 $OURD = "OU=R&D, $OUUtilisateurs"
@@ -105,7 +111,97 @@ Write-Host "New computer will automatically be placed under [$OUPostesClients]."
 Write-Host "############## AD CONFIGURATION END ##############"
 
 
+######################### CHECK VOLUME THAT STORE DATA OF AD USERS  ###################################
+#######################################################################################################
+
+Write-Host
+Write-Host "############## CHECK VOLUME CONFIGURATION START ##############"
+
+# Check if partition exists
+$Partition =  Get-Partition | Where-Object DriveLetter -EQ $Letter
+$Volume = Get-Volume | Where-Object DriveLetter -EQ $Letter
+if ($Partition -or $Volume) {
+    Write-Host -ForegroundColor Green "Partition [$Letter`:] successfully found."
+} else {    
+    Write-Host "[$Letter`:] has not been found." -ForegroundColor Red
+    
+    # Check if another letter is available
+    $AvailableVolumes = Get-Volume | Where-Object {$_.DriveLetter -ne "C" -and $_.DriveLetter -ne $null}
+    if ($AvailableVolumes) {
+        Write-Host "Others volume found. Choose one to store AD users's data" -ForegroundColor DarkYellow
+        $AvailableVolumes | Out-Default
+        $stop = $false
+
+        # Ask user which DriveLetter to use
+        while (-not $stop) {
+            $userInput = Read-Host "Volume to use (DriveLetter)"
+            foreach ($l in $AvailableVolumes.DriveLetter) {
+                if ($l -eq $userInput[0]) {
+                    $Letter = $l
+                    Write-Host "[$Letter`:] volume will store users data" -ForegroundColor Green
+                    $stop = $true
+                }
+            }
+        }
+    } else {
+        
+        # Check if a disk is available
+        $AvailableDisks = Get-Disk | Where-Object {-not $_.IsSystem} | Select-Object Number, FriendlyName, Size, AllocatedSize
+        if ($AvailableDisks) {
+            Write-Host "Additionnal disk(s) found."
+
+            # Ask the user if disk can be partionned
+            Write-Host "Following additionnal disk(s) are available."
+            $AvailableDisks | Out-Default
+
+            #Ask the user the disk to partition
+            $stop = $false
+            while (-not $stop) {
+                $userInput = Read-Host "Number of the disk for data users"
+                foreach ($d in $AvailableDisks.Number) {
+                    $d = Convert-String -InputObject $d                
+                    if ($userInput -eq $d) {
+                        $chosenDisk = Get-Disk -Number $d
+                        $stop = $true
+                    }
+                }
+            }
+
+            # Configure the disk
+            switch ($chosenDisk) {
+                {$_.PartitionStyle -eq 'raw'} {Initialize-Disk $chosenDisk.Number -PartitionStyle GPT}
+                {$_.IsOffline -eq $true} {Set-Disk -InputObject $chosenDisk -IsOffline $false}
+                {$_.IsReadOnly -eq $true} {Set-Disk -InputObject $chosenDisk -IsReadOnly $false} 
+            }
+            # Set Volume
+            New-Volume -Disk $chosenDisk -DriveLetter $Letter -FriendlyName $NewVolumeName
+
+        } else {
+            Write-Host "No available disk has been found. Please insert one. Restart the script after this." -ForegroundColor Red
+            return 
+        }
+    }    
+}
+
+Write-Host "############## CHECK VOLUME CONFIGURATION END ##############"
+
 ################################## SHARE CONFIGURATION ################################################
 #######################################################################################################
 
-#New-Item -ItemType Directory -Name 
+Write-Host
+Write-Host "############## SHARE CONFIGURATION START ##############"
+
+
+$ProfilesFolderPath = $Letter + ":\" 
+$DataFolderPath = $Letter + ":\" 
+
+# Folders creation
+$ProfileFolder = New-Item -ItemType Directory -Name $ProfilesFolderName -Path $ProfilesFolderPath
+Write-Host "$ProfilesFolderPath$ProfilesFolderName created"
+
+$DataFolder = New-Item -ItemType Directory -Name $DataFolderName -Path $DataFolderPath 
+Write-Host "$DataFolderPath$DataFolderName created"
+
+
+
+Write-Host "############## SHARE CONFIGURATION END ##############"

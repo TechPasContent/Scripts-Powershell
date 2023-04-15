@@ -1,4 +1,5 @@
 # Utilisation 
+Prérequis : 1VM, un disque secondaire sur la VM
 1. Lancer playstation1.ps1, redémarrer
 2. Lancer playstation2.ps1, redémarrer
 3. lancer playstation3.ps1, redémarrer
@@ -21,4 +22,4 @@
 	- Autorise DHCP sur le DC
 	- Config users/grps/OU de l'AD
 	- Configuration du dossier pour les profils itinérants
-	- 
+	- Configuration du dossier partage commun
