@@ -126,7 +126,7 @@ if ($Partition -or $Volume) {
     Write-Host "[$Letter`:] has not been found." -ForegroundColor Red
     
     # Check if another letter is available
-    $AvailableVolumes = Get-Volume | Where-Object {$_.DriveLetter -ne "C" -and $_.DriveLetter -ne $null -and $_.DriveLetter -ne "A" -and $_.DriveLetter -ne "B"}
+    $AvailableVolumes = Get-Volume | Where-Object {$_.DriveLetter -ne "C" -and $_.DriveLetter -ne $null -and $_.DriveLetter -ne "A" -and $_.DriveLetter -ne "B" -and $_.DriveType -eq "Fixed"}
     if ($AvailableVolumes) {
         Write-Host "Others volume found. Choose one to store AD users's data" -ForegroundColor DarkYellow
         $AvailableVolumes | Out-Default
@@ -205,3 +205,6 @@ Write-Host "$DataFolderPath$DataFolderName created"
 
 
 Write-Host "############## SHARE CONFIGURATION END ##############"
+
+
+pause

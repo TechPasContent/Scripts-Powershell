@@ -1,15 +1,23 @@
-$DNS1 = (Get-Content .\general.conf)[1].Split()[2]
-$DNS2 = (Get-Content .\general.conf)[2].Split()[2]
-$InterfaceAlias = (Get-Content .\general.conf)[3].Split()[2]
-$NewIp = (Get-Content .\general.conf)[4].Split()[2]
-$NewMask = (Get-Content .\general.conf)[5].Split()[2]
-$NewGateway = (Get-Content .\general.conf)[6].Split()[2]
-$dhcpScopeStart = (Get-Content .\general.conf)[7].Split()[2]
-$dhcpScopeEnd = (Get-Content .\general.conf)[8].Split()[2]
-$dhcpSubnetMask = (Get-Content .\general.conf)[9].Split()[2]
-$domainName = (Get-Content .\general.conf)[10].Split()[2]
-$domainNetBIOSName = (Get-Content .\general.conf)[11].Split()[2]
-$bInstallDNS = "$" + (Get-Content .\general.conf)[12].Split()[2]
+$DNS1 = (Get-Content $PSScriptRoot\general.conf)[1].Split()[2]
+$DNS2 = (Get-Content $PSScriptRoot\general.conf)[2].Split()[2]
+$InterfaceAlias = (Get-Content $PSScriptRoot\general.conf)[3].Split()[2]
+$NewIp = (Get-Content $PSScriptRoot\general.conf)[4].Split()[2]
+$NewMask = (Get-Content $PSScriptRoot\general.conf)[5].Split()[2]
+$NewGateway = (Get-Content $PSScriptRoot\general.conf)[6].Split()[2]
+$dhcpScopeStart = (Get-Content $PSScriptRoot\general.conf)[7].Split()[2]
+$dhcpScopeEnd = (Get-Content $PSScriptRoot\general.conf)[8].Split()[2]
+$dhcpSubnetMask = (Get-Content $PSScriptRoot\general.conf)[9].Split()[2]
+$domainName = (Get-Content $PSScriptRoot\general.conf)[10].Split()[2]
+$domainNetBIOSName = (Get-Content $PSScriptRoot\general.conf)[11].Split()[2]
+$bInstallDNS = (Get-Content $PSScriptRoot\general.conf)[12].Split()[2]
+
+if ($bInstallDNS -ieq "false") {
+    $bInstallDNS = $false
+} else {
+    $bInstallDNS = $true
+}
+
+[System.Convert]::ToBoolean($bInstallDNS)
 
 
 #################################### INTERFACE CONFIGURATION ##########################################
@@ -108,16 +116,28 @@ Write-Host "############## AD START ##############"
 # Install Active Directory Feature
 if ((Get-WindowsFeature -Name AD-Domain-Services).installed) {
     Write-Host "AD-DS Server is already installed."    
+    pause
 } else {
     Install-WindowsFeature -Name AD-Domain-Services -IncludeManagementTools
     Write-Host "AD-DS Role added to the server successfully" -ForegroundColor Green
+}
+
+
+
+
+
+if (Get-ADDomain) {
 
     # Create a new forest
-    Install-ADDSForest -DomainName $domainName -DomainNetBIOSName $domainNetBIOSName -SafeModeAdministratorPassword $adminPassword -Force -InstallDNS:$bInstallDNS
+    Install-ADDSForest -DomainName $domainName -DomainNetBIOSName $domainNetBIOSName -InstallDNS:$bInstallDNS
     Write-Host "New forest created successfully." -ForegroundColor Green
 
     # Restart the Server
     Restart-Computer -Confirm
 }
 
+$DC = Get-ADDomainController
+if ($DC.ComputerObjectDN -contains (hostname)) {
+    Install-ADDSDomainController -InstallDns:$true -DomainName $domainName -Force
+}
 Write-Host "############## AD END ##############"
