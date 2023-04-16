@@ -1,5 +1,13 @@
+param(
+    [string]$newHostname = "DC1"
+)
+
+
+#################################### HOSTNAME CONFIGURATION ##########################################
+#######################################################################################################
+
 $CurrentHostname = $env:computername | Select-Object
-$NewHostname = (Get-Content .\general.conf)[0].Split()[2]
+
 # Change the hostname
 if ( $CurrentHostname -ne $NewHostname) {    
     Rename-Computer -NewName $NewHostname -Force -Restart:$false
@@ -9,5 +17,4 @@ if ( $CurrentHostname -ne $NewHostname) {
 }
 else {
     Write-Host "Hostname of this computer is already $NewHostname"
-    pause
 }
