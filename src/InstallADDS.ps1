@@ -35,6 +35,7 @@ if ($bInstallForest -and $ComputerInfo.CsDomainRole -ne "PrimaryDomainController
         Write-Host "New forest [$domainName] created successfully." -ForegroundColor Green
         # Restart the Server
         Write-Host "Restart the computer to apply changes." -ForegroundColor Red
+        pause
 }
 
 Write-Host "############## AD END ##############"
