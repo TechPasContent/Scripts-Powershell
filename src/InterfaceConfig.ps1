@@ -4,14 +4,15 @@
     [int]$NewMask = 16,
     [string]$NewGateway = "10.10.0.254",
     [string]$DNS1 = "10.10.0.1",
-    [string]$DNS2 = "10.10.0.2"
+    [string]$DNS2 = "10.10.0.2",
+    [string]$confFilePath = "$PSScriptRoot\..\general.conf"
 )
 
 #################################### INTERFACE CONFIGURATION ##########################################
 #######################################################################################################
+
 Write-Host
 Write-Host "############## IPv4 START ##############"
-
 
 # Check if the Interface Alias exists
 $CurrentInterfaces = Get-NetAdapter 
@@ -28,9 +29,17 @@ if ($CurrentInterfaces.Name.Contains($InterfaceAlias)) {
         }
         $UserInput = Read-Host "Name of the interface to configure"
     }
-    $InterfaceAlias = $UserInput   
+    $InterfaceAlias = $UserInput
+
+    # Write new interfaceAlias in file
+    if (Test-Path -Path $confFilePath) {
+        $confFile = Get-Content -Path $confFilePath
+        $confFile[11] = "InterfaceAlias = $InterfaceAlias"
+        Set-Content -Path $confFilePath -Value $confFile
+        Write-Host "Conf file modified with new interface name." -ForegroundColor DarkYellow
+    } 
 }
-  
+
 Write-Host "Changing IP Address on $InterfaceAlias"
 try { 
  

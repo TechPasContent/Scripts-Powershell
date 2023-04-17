@@ -1,5 +1,6 @@
 param (
-    $VM = $null
+    # The name of VM/Computer, if Null or not in the list then it will ask the user which one to configure
+    $VM = $null 
 )
 
 function Read-HostQMC {
@@ -38,6 +39,8 @@ function Remove-ThisScriptAtNextLogon {
     }
 }
 
+
+# Read content of config file
 $NameDC1 = (Get-Content $PSScriptRoot\general.conf)[0].Split()[2]
 $NameDB1 = (Get-Content $PSScriptRoot\general.conf)[1].Split()[2]
 $NameDB2 = (Get-Content $PSScriptRoot\general.conf)[2].Split()[2]
@@ -49,8 +52,8 @@ $Mask = (Get-Content $PSScriptRoot\general.conf)[7].Split()[2]
 $Gateway = (Get-Content $PSScriptRoot\general.conf)[8].Split()[2]
 $DNS1 = (Get-Content $PSScriptRoot\general.conf)[9].Split()[2]
 $DNS2 = (Get-Content $PSScriptRoot\general.conf)[10].Split()[2]
-$InterfaceAlias = (Get-Content $PSScriptRoot\general.conf)[11].Split()[2]
-
+$InterfaceAlias = (Get-Content $PSScriptRoot\general.conf)[11].Split()[2] 
+if ((Get-Content $PSScriptRoot\general.conf)[11].Split()[3]) { $InterfaceAlias = $InterfaceAlias + " " + (Get-Content $PSScriptRoot\general.conf)[11].Split()[3] }
 
 $DHCPScopeStart = (Get-Content $PSScriptRoot\general.conf)[13].Split()[2]
 $DHCPScopeEnd = (Get-Content $PSScriptRoot\general.conf)[14].Split()[2]
@@ -64,13 +67,13 @@ $DriveLetter = (Get-Content $PSScriptRoot\general.conf)[20].Split()[2]
 $DataFolderName = (Get-Content $PSScriptRoot\general.conf)[21].Split()[2]
 $ProfilesFolderName = (Get-Content $PSScriptRoot\general.conf)[22].Split()[2]
 
-Write-Host "Which VM to configure ?"
-Write-Host "1# $NameDC1"
-Write-Host "2# $NameDb1"
-Write-Host "3# $NameDB2"
 
 # Ask the user which VM to configure
 if ($VM -ne $NameDC1 -and $VM -ne $NameDB1 -and $VM -ne $NameDB2) {
+    Write-Host "Which VM to configure ?"
+    Write-Host "1# $NameDC1"
+    Write-Host "2# $NameDb1"
+    Write-Host "3# $NameDB2"
     switch (Read-HostQMC -AnswersList "1","2","3" -Message "Number") {
     
         #DC1
@@ -84,6 +87,7 @@ if ($VM -ne $NameDC1 -and $VM -ne $NameDB1 -and $VM -ne $NameDB2) {
     }
 }
 
+
 Write-Host "$VM chosen." -ForegroundColor Green 
 Remove-ThisScriptAtNextLogon
 switch ($VM) {
@@ -92,21 +96,35 @@ switch ($VM) {
 
         Run-ThisScriptAtNextLogon -VM $VM
 
-        powershell -File "$PSScriptRoot\src\ChangeName.ps1" -NewHostname $NameDC1
+        #Check the hostname
+        if ((hostname) -ne $NameDC1) {
+            powershell -File "$PSScriptRoot\src\ChangeName.ps1" -NewHostname $NameDC1
+        }
 
-        powershell -File "$PSScriptRoot\src\InterfaceConfig.ps1" -NewIP $IPDC1 -DNS1 $DNS1 -DNS2 $DNS2 `
-                    -InterfaceAlias $InterfaceAlias -NewMask $Mask -NewGateway $Gateway
+        # Check if IP is already set or not
+        $CurrentIP = Get-NetIPConfiguration
+        if (-not ($CurrentIP.IPV4Address.IPAddress -eq $IPDC1 -and $CurrentIP.IPV4Address.PrefixLength -eq $Mask `
+                -and $CurrentIP.DNSServer.ServerAddresses -contains $DNS1 -and $CurrentIP.DNSServer.ServerAddresses -contains $DNS1 )) {        
+        
+             powershell -File "$PSScriptRoot\src\InterfaceConfig.ps1" -NewIP $IPDC1 -DNS1 $DNS1 -DNS2 $DNS2 `
+                    -InterfaceAlias $InterfaceAlias -NewMask $Mask -NewGateway $Gateway                  
+        }
 
+        # DHCP Server
         powershell -File "$PSScriptRoot\src\InstallDHCPServer.ps1" -dhcpScopeName $dhcpScopeName -dhcpScopeStart $DHCPScopeStart `
                     -dhcpScopeEnd $DHCPScopeEnd -dhcpSubnetMask $DHCPSubnetMask -DNS1 $DNS1 -DNS2 $DNS2
-
-        powershell -File "$PSScriptRoot\src\InstallADDS.ps1" -domainName $domainName -domainNetBIOSName $domainNetBIOSName `
-                    -InstallForest '$true' -InstallDNS '$true'
-                    
+        
+        # AD DS Server and forest
+        powershell -File "$PSScriptRoot\src\InstallADDSAndForest.ps1" -domainName $domainName -domainNetBIOSName $domainNetBIOSName `
+                    -InstallDNS '$true'
+        
+        # Authorize DHCP on DC            
         $FQDN = ((hostname)+"."+$domainName)
         powershell -File "$PSScriptRoot\src\AuthorizeDHCPonDC.ps1" -FQDN $FQDN
         
+        # Users, Groups, OU configuration
         powershell -File "$PSScriptRoot\src\Users,Grp,OU_configuration.ps1" -domainName $domainName -ProfilePath "\\$FQDN\$ProfilesFolderName\%username%"
+        
         Remove-ThisScriptAtNextLogon
 
     }
@@ -116,10 +134,33 @@ switch ($VM) {
 
         Run-ThisScriptAtNextLogon -VM $VM
 
-        powershell -File "$PSScriptRoot\src\ChangeName.ps1" -NewHostname $NameDB1
+        #Check the hostname
+        if ((hostname) -ne $NameDB1) {
+            powershell -File "$PSScriptRoot\src\ChangeName.ps1" -NewHostname $NameDB1
+        }
 
-        powershell -File "$PSScriptRoot\src\InterfaceConfig.ps1" -NewIP $IPDB1 -DNS1 $DNS1 -DNS2 $DNS2 -InterfaceAlias $InterfaceAlias -NewMask $Mask -NewGateway $Gateway
+        # Check if IP is already set or not
+        $CurrentIP = Get-NetIPConfiguration
+        if (-not ($CurrentIP.IPV4Address.IPAddress -eq $IPDB1 -and $CurrentIP.IPV4Address.PrefixLength -eq $Mask `
+                -and $CurrentIP.DNSServer.ServerAddresses -contains $DNS1 -and $CurrentIP.DNSServer.ServerAddresses -contains $DNS1 )) {        
         
+             powershell -File "$PSScriptRoot\src\InterfaceConfig.ps1" -NewIP $IPDC1 -DNS1 $DNS1 -DNS2 $DNS2 `
+                -InterfaceAlias $InterfaceAlias -NewMask $Mask -NewGateway $Gateway                  
+        }
+
+        # Join Domain
+        powershell -File "$PSScriptRoot\src\JoinDomain.ps1" -domainName $domainName
+
+
+        # Install AD DS and promute DC
+        powershell -File "$PSScriptRoot\src\InstallADDSAndPromuteDC.ps1" -domainName $domainName -InstallDNS '$true'
+
+        # Share Installation
+        powershell -File "$PSScriptRoot\src\ShareInstallation.ps1" -Letter $DriveLetter -ProfilesFolderName $ProfilesFolderName `
+                 -DataFolderName $DataFolderName
+
+
+        Remove-ThisScriptAtNextLogon
     }
 
     #DB2

@@ -1,5 +1,8 @@
-﻿param (
+﻿## WARNING ! Assuming this server is on a domain, with grps/OU configured
+
+param (
     [char]$Letter = 'E',
+    [string]$domainName = "isec.local",
     [string]$ProfilesFolderName = "Profils_Utilisateurs",
     [string]$DataFolderName = "Commun",
     [string]$DirectionFolderName = "Direction",
@@ -9,7 +12,56 @@
     [string]$RDFolderName = "R&D"
 )
 
+# Just checking if folder exists. If not, create it
+function Create-Folder {
+    param (
+        [string]$FolderName,
+        [string]$FolderPath
+    )
+    if (Test-Path -Path ($FolderPäth + "\" + $FolderName)) {
+        New-Item -ItemType Directory -Name $FolderName -Path $FolderPäth | Out-Null
+        Write-Host "[$FolderName] created." -ForegroundColor Green
+    } else {
+        Write-Host "[$FolderName] already exists." -ForegroundColor Green
+    }
+}
 
+
+# If folder is shared then remove the share and share it again. If not share then just share it
+function Share-Folder {
+    param (
+        [string]$FolderName,
+        [string]$FolderPath
+    )
+    $Path = $FolderPath + $FolderName
+    $ProfilesShared = Get-SmbShare -Name $FolderName 2>$null
+    if ($ProfilesShared) {
+        Remove-SmbShare -InputObject $ProfilesShared -Confirm:$false
+    }
+    New-SmbShare -Path $Path -FullAccess "Administrateurs" -Name $FolderName -CachingMode None | Out-Null
+    Write-Host "[$Path] is shared."
+}
+
+# This function reset acl on a folder, and create new access rights with a list
+function Set-ACLList {
+    param (
+        $Folder,
+        $FolderOwner,
+        $AccessRuleList
+    )
+    $Account = New-Object -TypeName System.Security.Principal.NTAccount -ArgumentList $FolderOwner;
+
+    Set-Acl -Path $Folder -AclObject (New-Object System.Security.AccessControl.DirectorySecurity)
+    $acl = Get-Acl -Path $Folder
+    try { $acl.SetOwner($Account) } 
+    catch { Write-Host "# ERROR # Impossible to set owner [$FolderOwner] to [$Folder]. Did you set your AD properly ?" -ForegroundColor Red}
+    $acl.SetAccessRuleProtection($true,$false)
+    foreach ($ar in $AccessRuleList) {
+        $AccessRule = New-Object System.Security.AccessControl.FileSystemAccessRule($ar)
+        $acl.SetAccessRule($AccessRule)
+    }
+    $acl | Set-Acl $Folder
+}
 
 ######################### CHECK VOLUME THAT STORE DATA OF AD USERS  ###################################
 #######################################################################################################
@@ -104,63 +156,27 @@ $InformatiqueFolder = $DataFolder + "\" + $InformatiqueFolderName
 $ComptaFolder = $DataFolder + "\" +$ComptaFolderName
 $RDFolder = $DataFolder + "\" + $RDFolderName
 
+
 # Folders creation
-New-Item -ItemType Directory -Name $ProfilesFolderName -Path $ProfilesFolderPath | Out-Null
-Write-Host "$ProfilesFolderPath$ProfilesFolderName created"
-
-New-Item -ItemType Directory -Name $DataFolderName -Path $DataFolderPath | Out-Null
-Write-Host "$DataFolderPath$DataFolderName created"
-
-New-Item -ItemType Directory -Name $DirectionFolderName -Path $DataFolder | Out-Null
-Write-Host "$DirectionFolder created"
-
-New-Item -ItemType Directory -Name $CommunicationFolderName -Path $DataFolder | Out-Null
-Write-Host "$CommunicationFolder created"
-
-New-Item -ItemType Directory -Name $InformatiqueFolderName -Path $DataFolder | Out-Null
-Write-Host "$InformatiqueFolder created"
-
-New-Item -ItemType Directory -Name $ComptaFolderName -Path $DataFolder | Out-Null
-Write-Host "$ComptaFolder created"
-
-New-Item -ItemType Directory -Name $RDFolderName -Path $DataFolder | Out-Null
-Write-Host "$RDFolder created"
+Create-Folder -FolderName $ProfilesFolderName -FolderPath $ProfilesFolderPath
+Create-Folder -FolderName $DataFolderName -FolderPath $DataFolderPath
+Create-Folder -FolderName $DirectionFolderName -FolderPath $DataFolder
+Create-Folder -FolderName $CommunicationFolderName -FolderPath $DataFolder
+Create-Folder -FolderName $InformatiqueFolderName -FolderPath $DataFolder
+Create-Folder -FolderName $ComptaFolderName -FolderPath $DataFolder
+Create-Folder -FolderName $RDFolderName -FolderPath $DataFolder
 
 # Sharing folders
-$DataShared = Get-SmbShare -Name $DataFolderName 2>$null
-if ($DataShared) {
-    Remove-SmbShare -InputObject $DataShared -Confirm:$false
-}
+Share-Folder -FolderName $DataFolderName -FolderPath $DataFolderPath
+Share-Folder -FolderName $ProfilesFolderName -FolderPath $ProfilesFolderPath
 
-$ProfilesShared = Get-SmbShare -Name $ProfilesFolderName 2>$null
-if ($ProfilesShared) {
-    Remove-SmbShare -InputObject $ProfilesShared -Confirm:$false
-}
-
-New-SmbShare -Path $ProfilesFolder -FullAccess "Administrateurs" -Name $ProfilesFolderName -CachingMode None | Out-Null
+# Grant group access to shares
 Grant-SmbShareAccess -Name $ProfilesFolderName -AccountName "GDL_ProfilsItinerants" -AccessRight Change -Confirm:$false | Out-Null
-New-SmbShare -Path $DataFolder -FullAccess "Administrateurs" -Name $DataFolderName -CachingMode None | Out-Null
 Grant-SmbShareAccess -Name $DataFolderName -AccountName "GDL_Direction_Partage", "GDL_Comptabilite_Partage", "GDL_Communication_Partage", `
                 "GDL_Informatique_Partage", "GDL_RD_Partage" -AccessRight Change -Confirm:$false | Out-Null
 
-# This function reset acl on a folder, and create new access rights with a list
-function Set-ACLList {
-    param (
-        $Folder,
-        $FolderOwner,
-        $AccessRuleList
-    )
-    Set-Acl -Path $Folder -AclObject (New-Object System.Security.AccessControl.DirectorySecurity)
-    $acl = Get-Acl -Path $Folder
-    $acl.SetOwner($FolderOwner)
-    $acl.SetAccessRuleProtection($true,$false)
-    foreach ($ar in $AccessRuleList) {
-        $AccessRule = New-Object System.Security.AccessControl.FileSystemAccessRule($ar)
-        $acl.SetAccessRule($AccessRule)
-    }
-    $acl | Set-Acl $Folder
-}
 
+# ACL configuration
 # Roaming profiles folder
 $AccessRuleList = @(
         ("CREATEUR PROPRIETAIRE","FullControl","ContainerInherit, ObjectInherit", "InheritOnly","Allow"),
