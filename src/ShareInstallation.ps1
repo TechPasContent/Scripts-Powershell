@@ -2,6 +2,7 @@
 
 param (
     [char]$Letter = 'E',
+    [string]$VolumeName = "Data",
     [string]$domainName = "isec.local",
     [string]$ProfilesFolderName = "Profils_Utilisateurs",
     [string]$DataFolderName = "Commun",
@@ -19,10 +20,10 @@ function Create-Folder {
         [string]$FolderPath
     )
     if (Test-Path -Path ($FolderPäth + "\" + $FolderName)) {
-        New-Item -ItemType Directory -Name $FolderName -Path $FolderPäth | Out-Null
-        Write-Host "[$FolderName] created." -ForegroundColor Green
-    } else {
         Write-Host "[$FolderName] already exists." -ForegroundColor Green
+    } else {        
+        New-Item -ItemType Directory -Name $FolderName -Path $FolderPath | Out-Null
+        Write-Host "[$FolderName] created." -ForegroundColor Green
     }
 }
 
@@ -106,12 +107,12 @@ if ($Partition -or $Volume) {
             Write-Host "Following additionnal disk(s) are available."
             $AvailableDisks | Out-Default
 
-            #Ask the user the disk to partition
+            #Ask the user the disk to partitionate
             $stop = $false
             while (-not $stop) {
                 $userInput = Read-Host "Number of the disk for data users"
                 foreach ($d in $AvailableDisks.Number) {
-                    $d = Convert-String -InputObject $d                
+                    $d = $d.ToString()            
                     if ($userInput -eq $d) {
                         $chosenDisk = Get-Disk -Number $d
                         $stop = $true
@@ -126,7 +127,7 @@ if ($Partition -or $Volume) {
                 {$_.IsReadOnly -eq $true} {Set-Disk -InputObject $chosenDisk -IsReadOnly $false} 
             }
             # Set Volume
-            New-Volume -Disk $chosenDisk -DriveLetter $Letter -FriendlyName $NewVolumeName
+            New-Volume -Disk $chosenDisk -DriveLetter $Letter -FriendlyName $VolumeName | Out-Null
 
         } else {
             Write-Host "No available disk has been found. Please insert one. Restart the script after this." -ForegroundColor Red

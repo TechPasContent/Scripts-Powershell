@@ -25,11 +25,15 @@ $ComputerInfo = Get-ComputerInfo
 if (("PrimaryDomainController", "BackupDomainController") -notcontains $ComputerInfo.CsDomainRole ) {
         
         if ($ComputerInfo.CsDomain -eq $domainName) {
-            # Promute DC
-            Install-ADDSDomainController -InstallDns:$bInstallDNS -DomainName $domainName -Force
+            while ($true) {
+                # Promute DC
+                if (Install-ADDSDomainController -InstallDns:$bInstallDNS -DomainName $domainName -Force -Credential (Get-Credential)) {
+                    break
+                }
+            }
             
             # Restart the Server
-            Write-Host "Completely upgraded to DC. Restart the server to apply changes." -ForegroundColor Red
+            Write-Host "Completely upgraded to DC. Restart the server to apply changes." -ForegroundColor Green
             pause
         } else {
             Write-Host "# ERROR # This server is not on the domain [$domainName]." -ForegroundColor Red

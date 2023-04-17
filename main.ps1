@@ -144,7 +144,7 @@ switch ($VM) {
         if (-not ($CurrentIP.IPV4Address.IPAddress -eq $IPDB1 -and $CurrentIP.IPV4Address.PrefixLength -eq $Mask `
                 -and $CurrentIP.DNSServer.ServerAddresses -contains $DNS1 -and $CurrentIP.DNSServer.ServerAddresses -contains $DNS1 )) {        
         
-             powershell -File "$PSScriptRoot\src\InterfaceConfig.ps1" -NewIP $IPDC1 -DNS1 $DNS1 -DNS2 $DNS2 `
+             powershell -File "$PSScriptRoot\src\InterfaceConfig.ps1" -NewIP $IPDB1 -DNS1 $DNS1 -DNS2 $DNS2 `
                 -InterfaceAlias $InterfaceAlias -NewMask $Mask -NewGateway $Gateway                  
         }
 
