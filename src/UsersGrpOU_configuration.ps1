@@ -1,4 +1,4 @@
-﻿param (
+param (
     [string]$domainName = "isec.local",
     [string]$ProfilePath = "\\DB1.isec.local\Profils_Utilisateurs\%username%"
 
@@ -70,7 +70,7 @@ function Set-ADConfiguration {
     New-ADOrganizationalUnit -Path $OUUtilisateurs -Name "R&D" -ProtectedFromAccidentalDeletion $bProtectedFromAccidentalDeletion
     New-ADOrganizationalUnit -Path $OUUtilisateurs -Name "Informatique" -ProtectedFromAccidentalDeletion $bProtectedFromAccidentalDeletion
     New-ADOrganizationalUnit -Path $OUUtilisateurs -Name "Communication" -ProtectedFromAccidentalDeletion $bProtectedFromAccidentalDeletion
-    New-ADOrganizationalUnit -Path $OUUtilisateurs -Name "Comptabilité" -ProtectedFromAccidentalDeletion $bProtectedFromAccidentalDeletion
+    New-ADOrganizationalUnit -Path $OUUtilisateurs -Name "Comptabilit�" -ProtectedFromAccidentalDeletion $bProtectedFromAccidentalDeletion
     New-ADOrganizationalUnit -Path $rootPath -Name "Postes Clients" -ProtectedFromAccidentalDeletion $bProtectedFromAccidentalDeletion
     New-ADOrganizationalUnit -Path $rootPath -Name "Groupes" -ProtectedFromAccidentalDeletion $bProtectedFromAccidentalDeletion
     Write-Host "OU configured successfully." -ForegroundColor Green

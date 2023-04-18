@@ -123,7 +123,7 @@ switch ($VM) {
         powershell -File "$PSScriptRoot\src\AuthorizeDHCPonDC.ps1" -FQDN $FQDN
         
         # Users, Groups, OU configuration
-        powershell -File "$PSScriptRoot\src\Users,Grp,OU_configuration.ps1" -domainName $domainName -ProfilePath "\\$FQDN\$ProfilesFolderName\%username%"
+        powershell -File "$PSScriptRoot\src\UsersGrpOU_configuration.ps1" -domainName $domainName -ProfilePath "\\$FQDN\$ProfilesFolderName\%username%"
         
         Remove-ThisScriptAtNextLogon
 

@@ -19,7 +19,7 @@ function Create-Folder {
         [string]$FolderName,
         [string]$FolderPath
     )
-    if (Test-Path -Path ($FolderPäth + "\" + $FolderName)) {
+    if (Test-Path -Path ($FolderPath + "\" + $FolderName)) {
         Write-Host "[$FolderName] already exists." -ForegroundColor Green
     } else {        
         New-Item -ItemType Directory -Name $FolderName -Path $FolderPath | Out-Null
@@ -150,12 +150,15 @@ Write-Host "############## SHARE CONFIGURATION START ##############"
 $ProfilesFolderPath = $Letter + ":\" 
 $ProfilesFolder = $ProfilesFolderPath + $ProfilesFolderName
 $DataFolderPath = $Letter + ":\"
-$DataFolder = $DataFolderPath + $DataFolderName
+$DataFolder = $DataFolderPath + "\" + $DataFolderName
 $DirectionFolder = $DataFolder + "\" + $DirectionFolderName
-$CommunicationFolder = $DataFolder+ "\" +$CommunicationFolderName
+$CommunicationFolder = $DataFolder + "\" + $CommunicationFolderName
 $InformatiqueFolder = $DataFolder + "\" + $InformatiqueFolderName
-$ComptaFolder = $DataFolder + "\" +$ComptaFolderName
-$RDFolder = $DataFolder + "\" + $RDFolderName
+$ComptaFolder = $DataFolder + "\" + $ComptaFolderName
+$RDFolder = $DataFolder + "\" +  $RDFolderName
+$SIFolderName = "SI"
+$SIFolder = $DataFolder + "\" + $SIFolderName
+
 
 
 # Folders creation
@@ -166,6 +169,7 @@ Create-Folder -FolderName $CommunicationFolderName -FolderPath $DataFolder
 Create-Folder -FolderName $InformatiqueFolderName -FolderPath $DataFolder
 Create-Folder -FolderName $ComptaFolderName -FolderPath $DataFolder
 Create-Folder -FolderName $RDFolderName -FolderPath $DataFolder
+Create-Folder -FolderName $SIFolderName -FolderPath $DataFolder
 
 # Sharing folders
 Share-Folder -FolderName $DataFolderName -FolderPath $DataFolderPath
@@ -173,9 +177,8 @@ Share-Folder -FolderName $ProfilesFolderName -FolderPath $ProfilesFolderPath
 
 # Grant group access to shares
 Grant-SmbShareAccess -Name $ProfilesFolderName -AccountName "GDL_ProfilsItinerants" -AccessRight Change -Confirm:$false | Out-Null
-Grant-SmbShareAccess -Name $DataFolderName -AccountName "GDL_Direction_Partage", "GDL_Comptabilite_Partage", "GDL_Communication_Partage", `
-                "GDL_Informatique_Partage", "GDL_RD_Partage" -AccessRight Change -Confirm:$false | Out-Null
-
+Grant-SmbShareAccess -Name $DataFolderName -AccountName "AUTORITE NT\Utilisateurs authentifiés" -AccessRight Read -Confirm:$false | Out-Null
+Grant-SmbShareAccess -Name $DataFolderName -AccountName "BUILTIN\Administrateurs" -AccessRight Full -Confirm:$false | Out-Null
 
 # ACL configuration
 # Roaming profiles folder
@@ -187,7 +190,7 @@ $AccessRuleList = @(
 )
 Set-ACLList -Folder $ProfilesFolder -FolderOwner "BUILTIN\Administrateurs" -AccessRuleList $AccessRuleList
 
-# Data folder
+# Commun folder
 $AccessRuleList = @(
         ("CREATEUR PROPRIETAIRE","FullControl","ContainerInherit, ObjectInherit", "InheritOnly","Allow"),
         ("BUILTIN\Administrateurs","FullControl","Allow"),
@@ -238,7 +241,16 @@ $AccessRuleList = @(
         ("AUTORITE NT\Système","FullControl", "ContainerInherit, ObjectInherit","None","Allow"),
         ("ISEC\GDL_RD_Partage","Write, ReadAndExecute, Synchronize","ContainerInherit, ObjectInherit","None","Allow")
 )
-Set-ACLList -Folder $RDFolder -FolderOwner "BUILTIN\Administrateurs" -AccessRuleList $AccessRuleList
+Set-ACLList -Folder $SIFolder -FolderOwner "BUILTIN\Administrateurs" -AccessRuleList $AccessRuleList
+
+# SI folder
+$AccessRuleList = @(
+        ("CREATEUR PROPRIETAIRE","FullControl","ContainerInherit, ObjectInherit", "InheritOnly","Allow"),
+        ("BUILTIN\Administrateurs","FullControl", "ContainerInherit, ObjectInherit","None", "Allow"),
+        ("AUTORITE NT\Système","FullControl", "ContainerInherit, ObjectInherit","None","Allow"),
+        ("AUTORITE NT\Utilisateurs authentifiés","ReadAndExecute","Allow")
+)
+Set-ACLList -Folder $ProfilesFolder -FolderOwner "BUILTIN\Administrateurs" -AccessRuleList $AccessRuleList
 
 Write-Host "Shared folders confirguration complete ! Access Rights are correctly configured." -ForegroundColor Green
 
