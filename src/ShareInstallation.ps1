@@ -194,7 +194,8 @@ Set-ACLList -Folder $ProfilesFolder -FolderOwner "BUILTIN\Administrateurs" -Acce
 $AccessRuleList = @(
         ("CREATEUR PROPRIETAIRE","FullControl","ContainerInherit, ObjectInherit", "InheritOnly","Allow"),
         ("BUILTIN\Administrateurs","FullControl","Allow"),
-        ("AUTORITE NT\Système","FullControl", "ContainerInherit, ObjectInherit","None","Allow")
+        ("AUTORITE NT\Système","FullControl", "ContainerInherit, ObjectInherit","None","Allow"),
+        ("AUTORITE NT\Utilisateurs authentifiés","ReadAndExecute","Allow")
 )
 Set-ACLList -Folder $DataFolder -FolderOwner "BUILTIN\Administrateurs" -AccessRuleList $AccessRuleList
 
