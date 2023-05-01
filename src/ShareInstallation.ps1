@@ -242,7 +242,7 @@ $AccessRuleList = @(
         ("AUTORITE NT\Système","FullControl", "ContainerInherit, ObjectInherit","None","Allow"),
         ("ISEC\GDL_RD_Partage","Write, ReadAndExecute, Synchronize","ContainerInherit, ObjectInherit","None","Allow")
 )
-Set-ACLList -Folder $SIFolder -FolderOwner "BUILTIN\Administrateurs" -AccessRuleList $AccessRuleList
+Set-ACLList -Folder $RDFolder -FolderOwner "BUILTIN\Administrateurs" -AccessRuleList $AccessRuleList
 
 # SI folder
 $AccessRuleList = @(
@@ -251,7 +251,7 @@ $AccessRuleList = @(
         ("AUTORITE NT\Système","FullControl", "ContainerInherit, ObjectInherit","None","Allow"),
         ("AUTORITE NT\Utilisateurs authentifiés","ReadAndExecute","Allow")
 )
-Set-ACLList -Folder $ProfilesFolder -FolderOwner "BUILTIN\Administrateurs" -AccessRuleList $AccessRuleList
+Set-ACLList -Folder $SIFolder -FolderOwner "BUILTIN\Administrateurs" -AccessRuleList $AccessRuleList
 
 Write-Host "Shared folders confirguration complete ! Access Rights are correctly configured." -ForegroundColor Green
 
