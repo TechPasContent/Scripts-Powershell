@@ -43,16 +43,16 @@ $OUGroupes = "OU=Groupes, $rootPath"
 
 # Users @(OU, Name, SamAccountName, Groups) 
 $Users = @(
-    @($OUComptabilite, "Michel BONNET", "bonnetm", @("GG_Comptabilite")),
-    @($OUComptabilite, "Sarah MOULA", "moulas", @("GG_Comptabilite")),
-    @($OUCommunication, "Alexis BAVARD", "bavarda", @("GG_Communication")),
-    @($OUCommunication, "Aurelie PUB", "puba", @("GG_Communication")),
-    @($OUInformatique, "Jean-Michel GEEK", "geekj", @("GG_Informatique")),
-    @($OUInformatique, "Abdelhalim MMORPG", "mmorpga", @("GG_Informatique")),
-    @($OURD, "Bob RECHERCHE", "rechercheb", @("GG_RD")),
-    @($OURD, "Boubakar DESTRUCTION", "destructionb", @("GG_RD")),
-    @($OUDirection, "Richard DIRIGEUR", "dirigeurr", @("GG_Direction")),
-    @($OUDirection, "Gollum ACCOLYTE", "accolyteg",@("GG_Direction"))
+    @($OUComptabilite, "Michel BONNET", "bonnetm", @("GG_Comptabilite", "GDL_ProfilsItinerants")),
+    @($OUComptabilite, "Sarah MOULA", "moulas", @("GG_Comptabilite", "GDL_ProfilsItinerants")),
+    @($OUCommunication, "Alexis BAVARD", "bavarda", @("GG_Communication", "GDL_ProfilsItinerants")),
+    @($OUCommunication, "Aurelie PUB", "puba", @("GG_Communication", "GDL_ProfilsItinerants")),
+    @($OUInformatique, "Jean-Michel GEEK", "geekj", @("GG_Informatique", "GDL_ProfilsItinerants")),
+    @($OUInformatique, "Abdelhalim MMORPG", "mmorpga", @("GG_Informatique", "GDL_ProfilsItinerants")),
+    @($OURD, "Bob RECHERCHE", "rechercheb", @("GG_RD", "GDL_ProfilsItinerants")),
+    @($OURD, "Boubakar DESTRUCTION", "destructionb", @("GG_RD", "GDL_ProfilsItinerants")),
+    @($OUDirection, "Richard DIRIGEUR", "dirigeurr", @("GG_Direction", "GDL_ProfilsItinerants")),
+    @($OUDirection, "Gollum ACCOLYTE", "accolyteg",@("GG_Direction", "GDL_ProfilsItinerants"))
     )
 # Groups
 $Groups = @("GG_Paris", "GG_LeHavre", "GG_Toulouse", "GG_Bordeaux",`
@@ -84,7 +84,7 @@ function Set-ADConfiguration {
     # Add Users
     foreach ($u in $Users){
         New-ADUser -Path $u[0] -Name $u[1] -SamAccountName $u[2] `
-            -AccountPassword (ConvertTo-SecureString -String $AccountPassword -AsPlainText -Force) `
+            -AccountPassword $AccountPassword `
             -Enabled $true -CannotChangePassword $true -PasswordNeverExpires $true `
             -ProfilePath $ProfilePath
         # Set users members of groups
@@ -134,3 +134,5 @@ if ($ActualOU) {
 Set-ADConfiguration
 
 Write-Host "############## AD CONFIGURATION END ##############"
+
+
