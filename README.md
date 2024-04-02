@@ -1,4 +1,4 @@
-Configuration des 3 serveurs
+Configuration des 3 serveurs (CUBE 2)
 
 # Utilisation 
 1. Déplacer le dossier <b>src</b>, les fichiers <b>general.conf</b> et <b>main.ps1</b> sur la VM
